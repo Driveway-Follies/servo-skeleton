@@ -4,12 +4,12 @@ class Prop{
   
   public:
     void init(int pin);
-    void update(int full_stop);
+    void update(int full_stop, int min_pull, int max_pull, int min_pause, int max_pause);
     
   private:
     Servo servo;
     int state;
-    long time;
+    long pull;
     long pause;
     long downspeed;
     long upspeed;
@@ -21,7 +21,7 @@ void Prop::init(int pin){
   
     servo.attach(pin);
     state = 0;
-    time = random(1000, 5000);
+    pull = random(1000, 5000);
     pause = random(200, 1000);
     downspeed = random(100, 135);
     upspeed = random(45, 80);
@@ -29,21 +29,26 @@ void Prop::init(int pin){
     
 }
   
-void Prop::update(int full_stop)
+void Prop::update(int full_stop, int min_pull, int max_pull, int min_pause, int max_pause)
       {
       unsigned long currentMillis = millis();
       //Serial.println(spider.previousMillis);
        
-       if(state == 0 || state == 2){
-         if((currentMillis - previousMillis) >= time){
+       if(state == 0){
+         if((currentMillis - previousMillis) >= pull){
             previousMillis = currentMillis;
-            time = random(1000, 5000);
+            pull = random(min_pull, max_pull);
+            state++;
+         }
+       }else if( state == 2){
+         if((currentMillis - previousMillis) >= pull){
+            previousMillis = currentMillis;
             state++;
          }
        }else if(state == 1 || state == 3){
           if((currentMillis - previousMillis) >= pause){
             previousMillis = currentMillis;
-            pause = random(200, 1000);
+            pause = random(min_pause, max_pause);
             state++;
          }
        }
@@ -53,13 +58,13 @@ void Prop::update(int full_stop)
           servo.write(135);
           break;
         case 1:
-          servo.write(90);
+          servo.write(full_stop);
           break;
         case 2:
           servo.write(45);
           break;
         case 3:
-          servo.write(90);
+          servo.write(full_stop);
           break;
         case 4:
           state = 0;
@@ -84,8 +89,8 @@ void setup()
 
 void loop() 
 { 
-    spider.update(90);
-    lefthand.update(90);
-    righthand.update(88);
+    spider.update(88, 500, 4000, 200, 1000);
+    lefthand.update(90, 5000, 6500, 200, 1000);
+    righthand.update(88, 3000, 6500, 200, 1000);
 } 
 
