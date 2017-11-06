@@ -82,15 +82,15 @@ Prop righthand;
 void setup() 
 { 
   Serial.begin(9600);
-  spider.init(9);
+  spider.init(9); 
   lefthand.init(10);
   righthand.init(11);
 } 
 
 void loop() 
 { 
-    spider.update(88, 500, 4000, 200, 1000);
-    lefthand.update(90, 5000, 6500, 200, 1000);
-    righthand.update(88, 3000, 6500, 200, 1000);
+    spider.update(88, 500, 4000, 200, 1000); //less travel, short movements
+    lefthand.update(90, 5000, 6500, 200, 1000); //more long travels
+    righthand.update(88, 3000, 6500, 200, 1000); //full stop adjusted for motor drift
 } 
 
