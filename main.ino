@@ -3,45 +3,65 @@
 class Prop{
   
   public:
-    void init(int pin);
-    void update(int full_stop, int min_pull, int max_pull, int min_pause, int max_pause);
+    void init(int servo_pin, int zero_pin);
+    void update(int zero_pin, int full_stop, int min_pull, int max_pull, int min_pause, int max_pause);
     
   private:
     Servo servo;
     int state;
+    int revs;
     long pull;
+    long push;
     long pause;
     long downspeed;
     long upspeed;
     unsigned long previousMillis;
+    unsigned long previousTrigger;
+    int debounce;
   
 };
 
-void Prop::init(int pin){
+void Prop::init(int servo_pin, int zero_pin){
   
-    servo.attach(pin);
+    servo.attach(servo_pin);
+    pinMode(zero_pin, INPUT_PULLUP);
     state = 0;
-    pull = random(1000, 5000);
+    revs = 0;
+    pull = random(4, 8);
+    push = random(0, 4);
     pause = random(200, 1000);
     downspeed = random(100, 135);
     upspeed = random(45, 80);
     previousMillis = 0;
-    
+    previousTrigger = 0;
+    debounce = 300;
 }
   
-void Prop::update(int full_stop, int min_pull, int max_pull, int min_pause, int max_pause)
+void Prop::update(int zero_pin, int full_stop, int min_pull, int max_pull, int min_pause, int max_pause)
       {
       unsigned long currentMillis = millis();
       //Serial.println(spider.previousMillis);
-       
-       if(state == 0){
-         if((currentMillis - previousMillis) >= pull){
+       int zeroed = digitalRead(zero_pin);
+       if((currentMillis - previousTrigger) >= debounce){
+         if(zeroed == LOW){
+           previousTrigger = millis();
+           if(state==0){
+             revs++;
+           }else if (state==2){
+             revs--;
+           }
+         }
+       }    
+      
+      if(state == 0){
+         if(revs >= pull){
+            pull = random((max_pull-min_pull)/2, max_pull);
             previousMillis = currentMillis;
-            pull = random(min_pull, max_pull);
             state++;
          }
        }else if( state == 2){
-         if((currentMillis - previousMillis) >= pull){
+         if(revs <= push){
+            push = random(min_pull, (max_pull-min_pull)/2);
             previousMillis = currentMillis;
             state++;
          }
@@ -52,7 +72,6 @@ void Prop::update(int full_stop, int min_pull, int max_pull, int min_pause, int 
             state++;
          }
        }
-       
       switch(state){
         case 0:
           servo.write(135);
@@ -82,15 +101,15 @@ Prop righthand;
 void setup() 
 { 
   Serial.begin(9600);
-  spider.init(9); 
-  lefthand.init(10);
-  righthand.init(11);
+  spider.init(9, 4); 
+  lefthand.init(10, 5);
+  righthand.init(11, 6);
 } 
 
 void loop() 
 { 
-    spider.update(88, 500, 4000, 200, 1000); //less travel, short movements
-    lefthand.update(90, 5000, 6500, 200, 1000); //more long travels
-    righthand.update(88, 3000, 6500, 200, 1000); //full stop adjusted for motor drift
+    spider.update(4, 88, 0, 16, 200, 1000); //less travel, short movements
+    lefthand.update(5, 90, 0, 8, 200, 1000); //more long travels
+    righthand.update(6, 88, 0, 8, 200, 1000); //full stop adjusted for motor drift
 } 
 
